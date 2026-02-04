@@ -1,375 +1,268 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
-import { ChevronLeft, ChevronRight, Plus, X } from "lucide-react";
+import React, { use, useEffect, useState } from "react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import CreatePostModelComponent from "./CreatePostModelComponent";
 
-// REDUX IMPORTS
+// REDUX
 import { useDispatch, useSelector } from "react-redux";
-
-// REDUX SLICES
-import {
-  togglePage,
-  openPage,
-  closePage,
-} from "@/redux/slices/OpenNdCloseSlice";
-
+import { togglePage, togglePageEdit } from "@/redux/slices/OpenNdCloseSlice";
 import { ScheduleDate } from "@/redux/slices/SchdulePostTimeAndDate";
 
-// IMPORTS
-import { getTopPosition } from "@/Actual-Components/Calender/handlers/CardPosition";
+import { FacebookAllScheduledPostsThunk } from "@/redux/thunks/facebookThunks/FacebookAllScheduledPostsListThunk";
+
+import { fetchSingleFacebookPostThunk } from "@/redux/thunks/facebookThunks/SingleFacebookPostContentThunk";
+// import EditPostContent from "../EditPostComponent/EditPostContent";
+import CreateEditPostComponent from "./CreatePostModelComponent";
 
 export default function PostCalendar() {
   const dispatch = useDispatch();
 
+  const [currentDate, setCurrentDate] = useState(new Date());
+  const [scheduledPostData, setScheduledPostData] = useState(null);
+
   const isOpen = useSelector((state) => state.OpenNdClose.isPageOpen);
-  console.log(isOpen);
-
-  const schedulePostDate = useSelector(
-    (state) => state.SchedulePostDateAndTime.date,
+  const isPageOpenEdit = useSelector(
+    (state) => state.OpenNdClose.isPageOpenEdit,
   );
-  // console.log("THE SCHEDULE DATE", schedulePostDate, "😘☀");
 
-  const scheduledPosts = useSelector(
-    (state) => state.SchedulePost.schedulePosts,
+  // ALL SCHEDULED POSTS FETCHING ALL
+  const listScheduledPosts = useSelector(
+    (state) => state.facebookAllScheduledPosts.allScheduledPosts,
   );
-  // console.log(scheduledPosts, "THE SCHEDULE POSTS IN CALENDER COMPONENT:");
 
-  const userData = useSelector((state) => {
-    return state.authSlice;
-  });
-  console.log(userData, "🚑🚑🚑🚑");
+  const formatDateKey = (date) =>
+    `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0",
+    )}-${String(date.getDate()).padStart(2, "0")}`;
 
-  const postsByDate = Array.isArray(scheduledPosts)
-    ? scheduledPosts.reduce((acc, post) => {
-        if (!post.scheduledAt) return acc;
+  const getMonthDays = () => {
+    const year = currentDate.getFullYear();
+    const month = currentDate.getMonth();
 
-        const date = post.scheduledAt.split("T")[0]; // "2026-01-06"
+    const firstDay = new Date(year, month, 1);
+    const startDate = new Date(firstDay);
+    startDate.setDate(startDate.getDate() - startDate.getDay());
 
-        if (!acc[date]) acc[date] = [];
-        acc[date].push(post);
+    const days = [];
+    for (let i = 0; i < 42; i++) {
+      const date = new Date(startDate);
+      date.setDate(startDate.getDate() + i);
+      days.push(date);
+    }
+    return days;
+  };
 
+  const navigateMonth = (dir) => {
+    setCurrentDate((prev) => {
+      const d = new Date(prev);
+      d.setMonth(prev.getMonth() + dir);
+      return d;
+    });
+  };
+
+  const formatTime = (dateTime) =>
+    new Date(dateTime).toLocaleTimeString("en-US", {
+      hour: "numeric",
+      minute: "2-digit",
+      hour12: true,
+    });
+
+  const isCurrentMonth = (date) => date.getMonth() === currentDate.getMonth();
+
+  const schedulePostList = listScheduledPosts?.scheduledPosts || [];
+  // console.log(schedulePostList);
+  const postsByDate = Array.isArray(schedulePostList)
+    ? schedulePostList.reduce((acc, post) => {
+        if (!post?.scheduledAt) return acc;
+
+        const key = formatDateKey(new Date(post.scheduledAt));
+        acc[key] = acc[key] || [];
+        acc[key].push(post);
         return acc;
       }, {})
     : {};
 
-  // console.log(postsByDate, "🚑🚑");
-
-  // now send theschedule post to calculate the px
-
-  const [currentDate, setCurrentDate] = useState(new Date());
-  const [posts, setPosts] = useState({});
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [postTitle, setPostTitle] = useState("");
-  const [postDescription, setPostDescription] = useState("");
-  const [startTime, setStartTime] = useState("09:00");
-  const [endTime, setEndTime] = useState("10:00");
-  const [postColor, setPostColor] = useState("emerald");
-
-  const [isHovered, setIsHovered] = useState(null);
-
-  const colorOptions = [
-    { name: "emerald", bg: "bg-emerald-500", text: "text-emerald-500" },
-    { name: "yellow", bg: "bg-yellow-400", text: "text-yellow-400" },
-    { name: "rose", bg: "bg-rose-400", text: "text-rose-400" },
-    { name: "purple", bg: "bg-purple-500", text: "text-purple-500" },
-    { name: "blue", bg: "bg-blue-500", text: "text-blue-500" },
-    { name: "orange", bg: "bg-orange-500", text: "text-orange-500" },
-  ];
-
-  const formatDateKey = (date) => {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
-  };
-
-  const getWeekDates = () => {
-    const dates = [];
-    const startDate = new Date(currentDate);
-
-    for (let i = 0; i < 60; i++) {
-      const date = new Date(startDate);
-      date.setDate(startDate.getDate() + i);
-      dates.push(date);
-    }
-    return dates;
-  };
-
-  const navigateWeek = (direction) => {
-    console.log(currentDate, "🤦‍♀️");
-    setCurrentDate((prev) => {
-      console.log("PREV:", prev); // TODAY COMPLETE DATE
-      const newDate = new Date(prev);
-      console.log("newDate:", newDate);
-      newDate.setDate(prev.getDate() + direction * 25); // 19 + (-1 * 30)
-      // return newDate;
-      console.log(newDate);
-      return newDate;
-    });
-  };
-
-  const addPost = () => {
-    if (!postTitle.trim()) return;
-
-    const dateKey = formatDateKey(selectedDate);
-    const newPost = {
-      id: Date.now(),
-      title: postTitle,
-      description: postDescription,
-      startTime,
-      endTime,
-      color: postColor,
-    };
-
-    setPosts((prev) => ({
-      ...prev,
-      [dateKey]: [...(prev[dateKey] || []), newPost].sort((a, b) =>
-        a.startTime.localeCompare(b.startTime),
-      ),
-    }));
-
-    // setShowModal(false);
-    dispatch(closePage(false));
-    resetForm();
-  };
-
-  const resetForm = () => {
-    setPostTitle("");
-    setPostDescription("");
-    setStartTime("09:00");
-    setEndTime("10:00");
-    setPostColor("emerald");
-  };
-
-  const deletePost = (dateKey, postId) => {
-    setPosts((prev) => ({
-      ...prev,
-      [dateKey]: prev[dateKey].filter((post) => post.id !== postId),
-    }));
-  };
-
-  const timeToMinutes = (time) => {
-    const [hours, minutes] = time.split(":").map(Number);
-    return hours * 60 + minutes;
-  };
-
-  const getPostStyle = (startTime, endTime) => {
-    const startMinutes = timeToMinutes(startTime);
-    const endMinutes = timeToMinutes(endTime);
-    const duration = endMinutes - startMinutes;
-
-    const topOffset = ((startMinutes - 540) / 60) * 120;
-    const height = (duration / 60) * 120;
-
-    return {
-      top: `${Math.max(0, topOffset)}px`,
-      height: `${Math.max(80, height)}px`,
-    };
-  };
-
-  const weekDates = getWeekDates();
-  // console.log(weekDates);
+  const monthDays = getMonthDays();
   const today = new Date();
 
-  const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
-  const monthNames = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
+  // DOING THIS FOR FETCHING THE SCHEDULDED POSTS OF THE PARTICULAR MONTH
+  const year = currentDate.getFullYear();
+  const month = currentDate.getMonth(); // 0-based
+
+  const startOfMonth = new Date(year, month, 1, 0, 0, 0);
+  const endOfMonth = new Date(year, month + 1, 0, 23, 59, 59);
+
+  const startUTC = startOfMonth.toISOString();
+  const endUTC = endOfMonth.toISOString();
+
+  const startEndDate = { startUTC, endUTC };
+  // CREATE POST HANDLER
+  const handleCreatePost = (selectedDate = new Date()) => {
+    dispatch(togglePage(true));
+    // dispatch(ScheduleDate(selectedDate.toISOString()));
+  };
+
+  // EDIT POST HANDLER
+  const handleEditPost = async (post) => {
+    try {
+      setScheduledPostData(post);
+      console.log(post, "THE POST GOING TO EDITING");
+      dispatch(fetchSingleFacebookPostThunk(post.postTemplateId));
+
+      dispatch(togglePageEdit(true));
+    } catch (error) {
+      console.error("Error fetching post:", error);
+    }
+  };
+
+  // CLOSE EDIT MODAL
+  const handleCloseEdit = () => {
+    dispatch(togglePageEdit(false));
+    setScheduledPostData(null);
+  };
+
+  // FOR FETCHING ALL-SCHEDULED-POSTS
+  useEffect(() => {
+    if (!startUTC || !endUTC) return;
+
+    dispatch(FacebookAllScheduledPostsThunk(startEndDate));
+  }, [startUTC, endUTC, dispatch]);
+
+  console.log();
+
+  const FacebookIcon = () => (
+    <svg
+      className="w-2 h-2 sm:w-2.5 sm:h-2.5 lg:w-3 lg:h-3"
+      viewBox="0 0 24 24"
+      fill="#1877F2"
+    >
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  );
+
+  const getStatusClasses = (status) => {
+    switch (status) {
+      case "published":
+        return "bg-green-100 border-green-400 hover:bg-green-200";
+      case "failed":
+        return "bg-red-100 border-red-400 hover:bg-red-200";
+      case "scheduled":
+      default:
+        return "bg-blue-100 border-blue-400 hover:bg-blue-200";
+    }
+  };
+
+  const FacebookIconNew = ({ color }) => (
+    <svg className="w-2.5 h-2.5" viewBox="0 0 24 24" fill={color}>
+      <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
+    </svg>
+  );
+  const getIconColor = (status) => {
+    switch (status) {
+      case "published":
+        return "#16a34a"; // green
+      case "failed":
+        return "#dc2626"; // red
+      case "scheduled":
+      default:
+        return "#1877F2"; // facebook blue
+    }
+  };
+
   return (
-    <div className="h-screen bg-gray-50 flex flex-col mb-3">
-      {/* Date Navigation Header */}
-      <div className="bg-white shadow-sm px-4 py-4">
-        <div className="flex items-center justify-between mb-3">
-          {/* LEFT BUTTON NAVIGATION */}
-          <button
-            onClick={() => navigateWeek(-1)}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
-            <ChevronLeft className="w-5 h-5 text-gray-600" />
-          </button>
-          {/* <h3 className="text-sm font-semibold text-gray-700">
-            Next 2 Months Schedule
-          </h3> */}
+    <div className="h-screen bg-gray-50 flex flex-col">
+      {/* HEADER */}
+      <div className="bg-white border-b p-4 flex justify-between items-center">
+        <div className="flex items-center gap-3">
+          <h2 className="text-xl font-bold">
+            {currentDate.toLocaleString("default", { month: "long" })}{" "}
+            {currentDate.getFullYear()}
+          </h2>
 
-          {/* RIGHT BUTTON NAVIGATION */}
-          <button
-            onClick={() => navigateWeek(1)}
-            className="p-2 hover:bg-gray-100 rounded-full"
-          >
-            <ChevronRight className="w-5 h-5 text-gray-600" />
+          <button onClick={() => navigateMonth(-1)}>
+            <ChevronLeft />
+          </button>
+
+          <button onClick={() => navigateMonth(1)}>
+            <ChevronRight />
           </button>
         </div>
-        <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
-          {weekDates.map((date, idx) => {
-            const isToday = formatDateKey(date) === formatDateKey(today);
 
-            return (
-              <div
-                key={idx}
-                className={` text-center px-3 py-2 rounded-lg cursor-pointer transition ${
-                  isToday ? "bg-blue-600" : "bg-gray-100 hover:bg-gray-200"
-                }`}
-                onClick={() => {
-                  setSelectedDate(date);
-                  // setShowModal(true);
-                  dispatch(togglePage(false));
-                }}
-              >
-                <div
-                  className={`text-xs mb-1 ${isToday ? "text-white font-semibold" : "text-gray-500"}`}
-                >
-                  {dayNames[date.getDay()]}
-                </div>
-                <div
-                  className={`text-lg font-bold ${isToday ? "text-white" : "text-gray-900"}`}
-                >
-                  {date.getDate()}
-                </div>
-                <div
-                  className={`text-xs ${isToday ? "text-white" : "text-gray-400"}`}
-                >
-                  {monthNames[date.getMonth()]}
-                </div>
-              </div>
-            );
-          })}
-        </div>
+        {/* SCHEDULE BUTTON */}
+        <button
+          onClick={() => handleCreatePost()}
+          className="bg-blue-600 text-white px-4 py-2 rounded flex items-center gap-2"
+        >
+          <Plus size={16} /> Schedule
+        </button>
       </div>
 
-      {/* THE MAIN DATES SHOWN ON THE BOTTOM OF ALL DATES */}
-      <div className="flex-1  px-0 pb-4 overflow-x-auto">
-        {/* HORIZONTAL SCROLL CONTAINER */}
-        <div className="">
-          <div className="min-w-max  ">
-            {/* DATE HEADER */}
-            <div className="flex border-b border-gray-300 sticky top-0 z-30 bg-white">
-              <div className="w-20 shrink-0 border-r border-gray-200" />
+      {/* GRID */}
+      <div className="flex-1 p-4 grid grid-cols-7 gap-2">
+        {monthDays.map((date, idx) => {
+          const dateKey = formatDateKey(date);
+          const dayPosts = postsByDate[dateKey] || [];
 
-              {weekDates.map((date, idx) => (
-                <div
-                  key={idx}
-                  className="w-32 shrink-0 text-center font-semibold py-2 border-r border-gray-200"
-                >
-                  <div className="flex justify-center">
-                    <Plus
-                      onClick={() => {
-                        dispatch(togglePage(false));
-                        dispatch(ScheduleDate(date.toISOString()));
-                      }}
-                      className="w-5 h-5 text-white rounded-full bg-blue-400 cursor-pointer"
-                    />
+          const MAX_VISIBLE_POSTS = 6;
+          const visiblePosts = dayPosts.slice(0, MAX_VISIBLE_POSTS);
+          const extraCount = dayPosts.length - MAX_VISIBLE_POSTS;
+
+          const isToday = formatDateKey(date) === formatDateKey(today);
+          const isOtherMonth = !isCurrentMonth(date);
+
+          return (
+            <div
+              key={idx}
+              className={`border rounded p-2 min-h-[110px] flex flex-col ${
+                isToday ? "border-blue-500 bg-blue-50" : "bg-white"
+              } ${isOtherMonth ? "opacity-40" : ""}`}
+            >
+              {/* DATE */}
+              <div className="flex justify-between mb-2">
+                <span className="font-semibold">{date.getDate()}</span>
+
+                <button onClick={() => handleCreatePost(date)}>
+                  <Plus size={14} />
+                </button>
+              </div>
+
+              {/* POSTS */}
+              <div className="flex flex-wrap gap-1">
+                {visiblePosts.map((post) => (
+                  <div
+                    key={post._id}
+                    title={`${formatTime(post.scheduledAt)} • ${post.status}`}
+                    onClick={() => handleEditPost(post)}
+                    className={`w-6 h-6 rounded border flex items-center justify-center cursor-pointer transition
+        ${getStatusClasses(post.status)}
+      `}
+                  >
+                    <FacebookIcon color={getIconColor(post.status)} />
                   </div>
-                  <div>{dayNames[date.getDay()]}</div>
-                  {date.getDate()} {monthNames[date.getMonth()]}
-                </div>
-              ))}
-            </div>
-
-            {/* BODY */}
-            <div className="flex sticky left-0">
-              {/* TIME LABELS */}
-              <div className="sticky left-0 z-30 bg-white">
-                <div className="flex flex-col w-20 border-r border-gray-200">
-                  {[
-                    "12:00 AM",
-                    "1:00 AM",
-                    "2:00 AM",
-                    "3:00 AM",
-                    "4:00 AM",
-                    "5:00 AM",
-                    "6:00 AM",
-                    "7:00 AM",
-                    "8:00 AM",
-                    "9:00 AM",
-                    "10:00 AM",
-                    "11:00 AM",
-                    "12:00 PM",
-                    "1:00 PM",
-                    "2:00 PM",
-                    "3:00 PM",
-                    "4:00 PM",
-                    "5:00 PM",
-                    "6:00 PM",
-                    "7:00 PM",
-                    "8:00 PM",
-                    "9:00 PM",
-                    "10:00 PM",
-                    "11:00 PM",
-                  ].map((time, idx) => (
-                    <div
-                      key={idx}
-                      className="h-[100] pl-2 border-b border-gray-200 text-sm text-gray-500 pt-1"
-                    >
-                      {time}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {/* DAYS GRID */}
-
-              <div className="flex">
-                {weekDates.map((date, dayIdx) => {
-                  const dateKey = formatDateKey(date); // "2026-01-24"
-                  const dayPosts = postsByDate[dateKey] || [];
-
-                  return (
-                    <div
-                      key={dayIdx}
-                      className="relative flex flex-col w-32 shrink-0 border-r border-gray-200"
-                    >
-                      {/* TIME SLOTS */}
-                      {[...Array(24)].map((_, timeIdx) => (
-                        <div
-                          key={timeIdx}
-                          className="h-[100] border-b border-gray-200"
-                        />
-                      ))}
-
-                      {/* 🔴 POSTS FOR THIS DAY */}
-                      {dayPosts.map((post, i) => (
-                        <div
-                          key={i}
-                          onMouseEnter={() => setIsHovered(post.id)}
-                          onMouseLeave={() => setIsHovered(null)}
-                          className="absolute left-1 right-1 bg-blue-500 text-white text-xs rounded p-1 shadow max-h-12 flex-nowrap "
-                          style={{
-                            // backgroundColor: "#31c998",
-                            top: `${getTopPosition(post.scheduledAt)}px`,
-                          }}
-                        >
-                          {/* {post.postContent} */}
-                          Facebook
-                          {isHovered === post.id && (
-                            <div className="absolute top-full z-20 right-0 mt-1 bg-[#31c998] text-white text-xs p-2 rounded">
-                              <div className="mb-2">{post.scheduledAt}</div>
-                              Scheduled at {post.postContent}
-                            </div>
-                          )}
-                        </div>
-
-                        // MAKING ON HOVER MAKE THE POST CONTNT VISIBLE
-                      ))}
-                    </div>
-                  );
-                })}
+                ))}
+                {extraCount > 0 && (
+                  <div className="w-full text-xs font-semibold text-gray-600">
+                    +{extraCount} more
+                  </div>
+                )}
               </div>
             </div>
-          </div>
-        </div>
+          );
+        })}
       </div>
 
-      {/* TAKE THIS STATE FROM THE REDUX STORE */}
-      {isOpen && <CreatePostModelComponent></CreatePostModelComponent>}
+      {isPageOpenEdit && scheduledPostData && (
+        <CreateEditPostComponent
+          data={scheduledPostData}
+          isEditMode={true}
+          onClose={handleCloseEdit}
+        />
+      )}
+
+      {/* CREATE MODAL */}
+      {isOpen && <CreateEditPostComponent isEditMode={false} />}
     </div>
   );
 }

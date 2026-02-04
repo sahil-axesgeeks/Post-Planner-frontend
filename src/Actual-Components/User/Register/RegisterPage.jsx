@@ -12,107 +12,51 @@ import {
   FileText,
   Users,
 } from "lucide-react";
+import { useDispatch, useSelector } from "react-redux";
+import { useRouter } from "next/navigation";
 
 // Import the thunk for dispatching the function
 import { registerUser } from "@/redux/thunks/auth/registerAuthThunk";
 
-import { useDispatch, useSelector } from "react-redux";
-
-import { useRouter } from "next/navigation"; // for Next.js App Router
+import { floatingIcons } from "../helpers/floatingIcons";
 
 export default function RegisterComponent() {
   const dispatch = useDispatch();
-
   const router = useRouter();
 
-  const { user, success } = useSelector((state) => {
-    return state.authSlice;
-  });
+  const { user, success, loading, initialized, error } = useSelector(
+    (state) => state.authSlice,
+  );
 
-  // const [name, setName] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  // const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+  // const { user, success } = useSelector((state) => {
+  //   return state.authSlice;
+  // });
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
   });
-  const HandleChange = (e) => {
+
+  const HandleChange = useCallback((e) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({
-      ...prev,
-      [name]: value,
-    }));
-  };
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  }, []);
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    console.log("FROM FRONTEND", formData);
-
-    // send to thunk
-    dispatch(registerUser(formData));
+    if (!loading) {
+      dispatch(registerUser(formData));
+    }
   };
 
-  const floatingIcons = [
-    {
-      Icon: MessageSquare,
-      color: "bg-blue-200",
-      position: "top-20 left-40",
-      size: "w-16 h-16",
-    },
-    {
-      Icon: Video,
-      color: "bg-purple-200",
-      position: "top-32 right-48",
-      size: "w-20 h-20",
-    },
-    {
-      Icon: Music,
-      color: "bg-pink-200",
-      position: "top-16 right-80",
-      size: "w-14 h-14",
-    },
-    {
-      Icon: Image,
-      color: "bg-green-200",
-      position: "top-48 left-64",
-      size: "w-12 h-12",
-    },
-    {
-      Icon: FileText,
-      color: "bg-purple-300",
-      position: "top-64 right-96",
-      size: "w-16 h-16",
-    },
-    {
-      Icon: Users,
-      color: "bg-green-300",
-      position: "bottom-48 left-48",
-      size: "w-14 h-14",
-    },
-    {
-      Icon: Mail,
-      color: "bg-blue-300",
-      position: "bottom-32 right-64",
-      size: "w-12 h-12",
-    },
-    {
-      Icon: Lock,
-      color: "bg-pink-300",
-      position: "bottom-64 left-96",
-      size: "w-16 h-16",
-    },
-  ];
-
   useEffect(() => {
-    if (success && user) {
-      console.log("user", user);
-      router.push("/");
-      // redirect();
+    if (initialized && user) {
+      router.replace("/");
     }
-  }, [success, user]);
+  }, [initialized, user, router]);
 
   return (
     <div className="relative w-screen min-h-screen overflow-hidden flex items-center justify-center bg-transparent">
@@ -189,7 +133,7 @@ export default function RegisterComponent() {
               <div className="relative">
                 <input
                   type={showPassword ? "text" : "password"}
-                  value={FormData.password}
+                  value={formData.password}
                   name="password"
                   onChange={HandleChange}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none pr-12"
@@ -208,9 +152,10 @@ export default function RegisterComponent() {
             {/* Submit */}
             <button
               type="submit"
-              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-semibold shadow-lg"
+              disabled={loading}
+              className="w-full bg-indigo-600 hover:bg-indigo-700 text-white py-3.5 rounded-xl font-semibold shadow-lg disabled:opacity-50"
             >
-              Login
+              {loading ? "Registering..." : "Register"}
             </button>
           </form>
 

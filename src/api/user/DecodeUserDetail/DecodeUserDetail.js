@@ -1,5 +1,6 @@
 export const DecodeUserDetail = async () => {
-  const response = await fetch("http://localhost:5002/api/v1/userDetails", {
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const response = await fetch(`${BASE_URL}/api/v1/userDetails`, {
     method: "GET",
     credentials: "include",
     headers: {

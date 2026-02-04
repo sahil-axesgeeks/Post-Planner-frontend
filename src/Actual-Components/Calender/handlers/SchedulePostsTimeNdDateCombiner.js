@@ -1,12 +1,23 @@
 export const combineDateAndTime = (dateISO, time) => {
+  if (!dateISO || !time) return null; // Return null if invalid
+
   const date = new Date(dateISO);
 
-  const [hours, minutes, seconds] = time.split(":").map(Number);
+  const timeParts = time
+    .trim()
+    .match(/(\d{1,2}):(\d{2})(?::(\d{2}))?\s*(AM|PM)?/i);
+  if (!timeParts) return date.toISOString();
 
-  date.setHours(hours);
-  date.setMinutes(minutes);
-  date.setSeconds(seconds || 0);
+  let hours = Number(timeParts[1]);
+  const minutes = Number(timeParts[2]);
+  const seconds = timeParts[3] ? Number(timeParts[3]) : 0;
+  const ampm = timeParts[4];
 
-  console.log(date, "THE DATE COMES AFTER THE COMBINATION");
+  if (ampm) {
+    if (ampm.toUpperCase() === "PM" && hours < 12) hours += 12;
+    if (ampm.toUpperCase() === "AM" && hours === 12) hours = 0;
+  }
+
+  date.setHours(hours, minutes, seconds);
   return date.toISOString();
 };

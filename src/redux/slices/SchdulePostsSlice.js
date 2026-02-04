@@ -3,16 +3,53 @@ import { createSlice } from "@reduxjs/toolkit";
 const ScheduledPostSlice = createSlice({
   name: "SchedulePost",
   initialState: {
-    schedulePosts: [],
+    draft: {
+      postType: "",
+      postContent: "",
+      scheduledAt: null,
+    },
+    //ALL THE POSTS WHICH ARE SCHEULED MEANS LINE-UP IN THE EXCHANGE
+    scheduledPosts: [],
   },
   reducers: {
-    addToSchdeuledPosts: (state, action) => {
-      console.log(action.payload, "😍😍");
-      state.schedulePosts.push(action.payload);
+    setPostType(state, action) {
+      state.draft.postType = action.payload;
+    },
+    setPostContent(state, action) {
+      state.draft.postContent = action.payload;
+    },
+    setScheduledAt(state, action) {
+      state.draft.scheduledAt = action.payload;
+    },
+    addToScheduledPosts(state) {
+      state.scheduledPosts.push({
+        ...state.draft,
+        id: Date.now(),
+      });
+
+      // reset draft after scheduling
+      state.draft = {
+        postType: "",
+        postContent: "",
+        scheduledAt: null,
+      };
+    },
+    resetDraft(state) {
+      state.draft = {
+        postType: "",
+        postContent: "",
+        scheduledAt: null,
+      };
     },
   },
 });
 
-export const { addToSchdeuledPosts } = ScheduledPostSlice.actions;
+export const {
+  setPostType,
+  setPostContent,
+  setScheduledAt,
+  addToScheduledPosts,
+  resetDraft,
+} = ScheduledPostSlice.actions;
 
 export default ScheduledPostSlice.reducer;

@@ -1,7 +1,7 @@
 import { fetchPostFunction } from "../fetchPostFunction";
-export const facebookApi = () => {
+export const facebookApi = async () => {
   let url = "http://localhost:5000/auth/facebook/Login";
-  const response = fetchPostFunction(url);
+  const response = await fetchPostFunction(url);
 
   console.log(response, "👧👧👧");
 

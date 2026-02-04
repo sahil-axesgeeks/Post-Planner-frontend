@@ -1,6 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
-// THUNK IMPORTS
+// THUNKS
 import { registerUser } from "../thunks/auth/registerAuthThunk";
 import { loginAuthThunk } from "../thunks/auth/loginAuthThunk";
 import { DecodeCookieThunk } from "../thunks/auth/DecodeCookieThunk";
@@ -8,6 +8,7 @@ import { DecodeCookieThunk } from "../thunks/auth/DecodeCookieThunk";
 const initialState = {
   user: null,
   loading: false,
+  initialized: false, // 🔑 auth checked at least once
   error: null,
   success: false,
 };
@@ -21,38 +22,47 @@ const authSlice = createSlice({
       state.error = null;
       state.success = false;
     },
+    logout: (state) => {
+      state.user = null;
+      state.initialized = true;
+    },
   },
   extraReducers: (builder) => {
     builder
+
       .addCase(registerUser.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.success = false;
       })
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
         state.user = action.payload;
+        state.initialized = true;
       })
       .addCase(registerUser.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload || "Registration failed";
+        state.initialized = true;
       })
 
-      // LOGIN
       .addCase(loginAuthThunk.pending, (state) => {
         state.loading = true;
         state.error = null;
+        state.success = false;
       })
       .addCase(loginAuthThunk.fulfilled, (state, action) => {
         state.loading = false;
+        state.success = true;
         state.user = action.payload;
+        state.initialized = true;
       })
       .addCase(loginAuthThunk.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.error = action.payload || "Login failed";
+        state.initialized = true;
       })
-
-      // DECODE-COOKIE
 
       .addCase(DecodeCookieThunk.pending, (state) => {
         state.loading = true;
@@ -60,14 +70,17 @@ const authSlice = createSlice({
       })
       .addCase(DecodeCookieThunk.fulfilled, (state, action) => {
         state.loading = false;
-        state.user = action.payload;
+        state.user = action.payload || null;
+        state.initialized = true;
       })
       .addCase(DecodeCookieThunk.rejected, (state, action) => {
         state.loading = false;
-        state.error = action.payload;
+        state.user = null;
+        state.error = action.payload || null;
+        state.initialized = true;
       });
   },
 });
 
-export const { resetAuthState } = authSlice.actions;
+export const { resetAuthState, logout } = authSlice.actions;
 export default authSlice.reducer;

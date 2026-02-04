@@ -27,18 +27,28 @@ export default function DateAndMonthCalender() {
   const scheduleDateISO = useSelector(
     (state) => state.SchedulePostDateAndTime.date,
   );
+  console.log(scheduleDateISO, "🎟🎟");
+
   const scheduleTime = useSelector(
     (state) => state.SchedulePostDateAndTime.time,
   );
 
-  const selectedDate = scheduleDateISO ? new Date(scheduleDateISO) : null;
+  function toLocalDate(dateString) {
+    if (!dateString) return undefined;
+    const [y, m, d] = dateString.split("-").map(Number);
+    return new Date(y, m - 1, d); // month is 0-indexed
+  }
+
+  const selectedDate = toLocalDate(scheduleDateISO);
+
+  console.log(selectedDate, "🎄🎄");
 
   // CONVERT THE DATE AND TIME  IN THE COMBINED
-  const completeDate = combineDateAndTime(scheduleDateISO, scheduleTime);
-  console.log(completeDate);
+  // const completeDate = combineDateAndTime(scheduleDateISO, scheduleTime);
+  // console.log(completeDate);
 
   return (
-    <div className="flex gap-3">
+    <div className="flex gap-3 w-fit">
       {/* DATE */}
       <div className="flex flex-col gap-3">
         <Label className="px-1">Date</Label>
@@ -54,17 +64,21 @@ export default function DateAndMonthCalender() {
             </Button>
           </PopoverTrigger>
 
-          <PopoverContent className="w-auto p-0" align="start">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              captionLayout="dropdown"
-              onSelect={(d) => {
-                dispatch(ScheduleDate(d.toISOString()));
-                setOpen(false);
-              }}
-            />
-          </PopoverContent>
+          <Calendar
+            mode="single"
+            selected={selectedDate}
+            onSelect={(date) => {
+              console.log("ON SELECT FIRED:", date);
+
+              if (!date) return;
+              const yyyy = date.getFullYear();
+              const mm = String(date.getMonth() + 1).padStart(2, "0"); // month is 0-indexed
+              const dd = String(date.getDate()).padStart(2, "0");
+
+              dispatch(ScheduleDate(`${yyyy}-${mm}-${dd}`));
+              setOpen(false);
+            }}
+          />
         </Popover>
       </div>
 
@@ -76,6 +90,7 @@ export default function DateAndMonthCalender() {
           type="time"
           step="1"
           value={scheduleTime}
+          // STORE THE TIME AND DATE IN THE ON A SEPERATE SLICE
           onChange={(e) => dispatch(ScheduleTime(e.target.value))}
         />
       </div>
