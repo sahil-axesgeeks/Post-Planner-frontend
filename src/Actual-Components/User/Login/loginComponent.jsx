@@ -7,49 +7,51 @@ import { useRouter } from "next/navigation";
 import { loginAuthThunk } from "@/redux/thunks/auth/loginAuthThunk";
 import { floatingIcons } from "../helpers/floatingIcons";
 
+// HANDLERS
+import useFormChange from "../helpers/handleChange";
+
 export default function LoginComponent() {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { user, loading, error, initialized } = useSelector(
-    (state) => state.authSlice,
-  );
+  const { loading, error, success } = useSelector((state) => state.authSlice);
 
+  const locale = navigator.language;
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  console.log(locale, timeZone);
   const [showPassword, setShowPassword] = useState(false);
-  const [form, setForm] = useState({ email: "", password: "" });
+  const [form, setForm] = useState({
+    email: "",
+    password: "",
+    locale: locale,
+    timezone: timeZone,
+    timeFormat: locale === "en-US" ? "12h" : "24h",
+  });
 
-  // Redirect on successful login
-  // useEffect(() => {
-  //   if (success && user) router.push("/");
-  // }, [success, user, router]);
-
-  const handleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setForm((prev) => ({ ...prev, [name]: value }));
-  }, []);
+  const handleChange = useFormChange(setForm);
 
   const handleSubmit = useCallback(
     (e) => {
       e.preventDefault();
       if (!loading) dispatch(loginAuthThunk(form));
     },
-    [dispatch, form, loading],
+    [dispatch, form],
   );
 
-  // Show loader if loading
+  useEffect(() => {
+    if (success) {
+      router.replace("/");
+    }
+  }, [success]);
+
   if (loading) {
     return (
       <div className="flex items-center justify-center w-screen min-h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid" />
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500" />
       </div>
     );
   }
-
-  useEffect(() => {
-    if (initialized && user) {
-      router.replace("/");
-    }
-  }, [initialized, user, router]);
 
   return (
     <div className="relative w-screen min-h-screen flex items-center justify-center bg-gray-50 overflow-hidden">

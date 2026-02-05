@@ -1,3 +1,4 @@
+"use client";
 import LoginComponent from "@/Actual-Components/User/Login/loginComponent";
 
 export default function Page() {

@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import {
   X,
   Image,
@@ -16,79 +16,68 @@ import { useDispatch, useSelector, shallowEqual } from "react-redux";
 
 import DateAndMonthCalender from "@/Actual-Components/DateNdMonthCalender/DateNdMonthCalender";
 import { combineDateAndTime } from "../Calender/handlers/SchedulePostsTimeNdDateCombiner";
-import { formatISTDateTime } from "../Calender/handlers/ChangeDateUtcToIst";
-import { updateScheduledPostApi } from "@/api/facebookAgainSchedulePost/facebookAgainSchedulePostApi";
-// SLICES
+import { formatTimeWithAmPm } from "../Calender/handlers/ChangeDateUtcToIst";
 
+// SLICES
 import { ToggleCalender } from "@/redux/slices/CalenderOpenNdCloseSlice";
 import { togglePage, togglePageEdit } from "@/redux/slices/OpenNdCloseSlice";
-
 import {
-  addToScheduledPosts,
-  setPostType,
-  setPostContent,
-  resetDraft,
-} from "@/redux/slices/SchdulePostsSlice";
-// SCHEDULE-POST DATE AND TIME
-import {
+  // ScheduleDate,
+  // scheduleTime,
   setSchedule,
-  ScheduleDate,
-  ScheduleTime,
 } from "@/redux/slices/SchdulePostTimeAndDate";
+import { setPostContent, resetDraft } from "@/redux/slices/SchdulePostsSlice";
 
-// THUNKS
-import { scheduleFacebookPostThunk } from "@/redux/thunks/facebookThunks/facebookScheduledPostThunk";
-
+import { useSchedulePost } from "./hooks/useSchedulePost";
+// import { useEditPostPrefill } from "./hooks/useEditPostPrefill";
+import {
+  buildCreateSchedulePayload,
+  buildEditSchedulePayload,
+} from "./utils/payloadBuilders";
+import { convertUTCToReduxSchedule } from "./utils/dateUtils";
 export default function CreateEditPostComponent({ data, isEditMode = false }) {
   const dispatch = useDispatch();
+  // useEditPostPrefill({ isEditMode, data, dispatch });
+
+  // CUSTOM HOOKS
+  const { createSchedule, editSchedule } = useSchedulePost();
 
   const [firstComment, setFirstComment] = useState("");
   const [createAnother, setCreateAnother] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
   const [pageId, setPageId] = useState([]);
 
-  // USE-SELECTORS
   const {
     postType,
     postContent,
-
-    // THE POST GOING TO SCHEDULE DATE-TIME
     scheduleTime,
     scheduleDate,
-
-    schedulePostData,
-    // FETCHING THE SINGLE POST
+    // schedulePostData,
     singleFacebookPostContent,
-
     isCalenderOpen,
     fetchPagesList,
   } = useSelector(
     (state) => ({
       postType: state.SchedulePost.draft.postType,
       postContent: state.SchedulePost.draft.postContent,
-
-      // THE POST GOING TO SCHEDULE DATE-TIME
       scheduleTime: state.SchedulePostDateAndTime.time,
       scheduleDate: state.SchedulePostDateAndTime.date,
-
-      //
-      schedulePostData: state.SchedulePost.draft,
-
-      //FETCHING THE SINGLE POST CONTENT
+      // schedulePostData: state.SchedulePost.draft,
       singleFacebookPostContent:
         state.singleFacebookPostContent.singleFacebookPost,
-
       isCalenderOpen: state.CalenderOpenNdClose.isCalenderOpen,
       fetchPagesList: state.fetchPages.pages,
     }),
     shallowEqual,
   );
-  // console.log(schedulePostData, "🧿");
+  console.log(scheduleTime, "🖼🖼🖼🖼🖼🖼");
 
-  // SCHEDULED TIME-DATE-COMBINED
-  const completeDateAndTime = combineDateAndTime(scheduleDate, scheduleTime);
+  console.log(singleFacebookPostContent);
+  const completeDateAndTime = useMemo(
+    () => combineDateAndTime(scheduleDate, scheduleTime),
+    [scheduleDate, scheduleTime],
+  );
 
-  // MEMOIZED-CONNECTED-PAGE-FUNCTION (for create mode)
   const mappedPages = useMemo(() => {
     if (isEditMode) return [];
     return (
@@ -122,118 +111,65 @@ export default function CreateEditPostComponent({ data, isEditMode = false }) {
     );
   }, [fetchPagesList?.instagramPages, isEditMode]);
 
-  // FOR MAKING THE SELECTION BETWEEN THE HANDLERS
-  const handleClick = (page) => {
+  const handleClick = useCallback((page) => {
     setPageId((prev) => {
-      console.log("SETTING THE PAGE🥽🥽");
       const exists = prev.some(
         (p) => p.id === page.id && p.platform === page.platform,
       );
-
-      if (exists) {
-        return prev.filter(
-          (p) => !(p.id === page.id && p.platform === page.platform),
-        );
-      }
-
-      return [
-        ...prev,
-        { id: page.id, platform: page.platform, pageName: page.pageName },
-      ];
+      return exists
+        ? prev.filter(
+            (p) => !(p.id === page.id && p.platform === page.platform),
+          )
+        : [
+            ...prev,
+            { id: page.id, platform: page.platform, pageName: page.pageName },
+          ];
     });
-  };
+  }, []);
 
-  const HandleSetSchedule = () => {
-    // dispatch(setScheduledAt(completeDateAndTime));
-
-    const userData = {
-      caption: schedulePostData.postContent,
-      page_id: pageId,
-      scheduledAt: completeDateAndTime,
-    };
-
-    console.log(userData, "🎆THE SCHEDULE-POST-DATA");
-
-    // DISPATCHING THE EVENT FOR CRETING A SCHEDULE POST
-    dispatch(scheduleFacebookPostThunk(userData));
-
-    dispatch(addToScheduledPosts());
-  };
-
-  // MAKING THIS FOR THE EDIT POST GOING AGAIN FOR THE SCHEDULE
-  const handleScheduleEditPostAgainSchedule = async () => {
-    console.log("MAKING THE POST AGAIN SCHEDULE");
-    // console.log();
-    if (!data) {
-      return console.log("NO DATA FOUND FOR THE POST");
+  const handleClose = useCallback(() => {
+    if (isEditMode) {
+      dispatch(togglePageEdit(false));
+      dispatch(resetDraft());
+    } else {
+      dispatch(togglePage(false));
+      dispatch(resetDraft());
     }
-    console.log(data, "🎿🎿🎿🎿🎿🎿🎿🎿🎿🎿");
-    const updatePayload = {
-      postTemplateId: data?.postTemplateId,
-      connectedAccountPageId: data?.connectedAccountPageId,
+  }, [dispatch, isEditMode]);
+
+  // FOR CREATE A POST
+  const handleCreateSchedule = useCallback(() => {
+    const payload = buildCreateSchedulePayload({
+      postContent,
+      pageId,
       scheduledAt: completeDateAndTime,
-      postType: schedulePostData?.postType,
-      caption: schedulePostData?.postContent,
-    };
-    console.log(updatePayload, "🥊🥊🥊🥊🥊🥊🥊🥊🥊🥊🥊");
-    console.log(schedulePostData);
-    await updateScheduledPostApi(data._id, updatePayload);
+    });
+    createSchedule(payload);
+  }, [postContent, pageId, completeDateAndTime]);
 
-    dispatch(resetDraft());
-  };
+  // FOR EDIT  A SCHEDULED POST
+  const handleEditSchedule = useCallback(() => {
+    const payload = buildEditSchedulePayload({
+      data,
+      scheduledAt: completeDateAndTime,
+      postType,
+      postContent,
+    });
+    editSchedule(data._id, payload);
+  }, [data, completeDateAndTime, postType, postContent]);
 
-  // FOR DECODING THE UTC TO IST
-  const setScheduleFromUTC = (utcString) => {
-    const { date, time } = formatISTDateTime(utcString);
-    console.log(date, time);
-    dispatch(ScheduleDate(date));
-    dispatch(ScheduleTime(time));
-  };
-
-  // FOR EDIT MODE - Load existing post data
   useEffect(() => {
     if (!isEditMode || !singleFacebookPostContent) return;
 
     const { caption, scheduledAt } = singleFacebookPostContent;
 
+    console.log(caption, scheduledAt);
     if (caption) dispatch(setPostContent(caption));
-
-    // GOT THE SCHEDULEDAT --> NOW SENDING THE DATE-TIME TO THE SCHEDULE-POST-TIME-DATE SLICE--> SCHEDULETIME-SCHEDULE-DATE
     if (scheduledAt) {
-      // dispatch(ScheduleDate())
-      // dispatch(scheduleTime())
-      // dispatch(setScheduledAt(scheduledAt));
-
-      // THIS SCHEDULE THE DATE-TIME
       dispatch(setSchedule(scheduledAt));
+      convertUTCToReduxSchedule(scheduledAt, dispatch);
     }
-
-    if (schedulePostData?.scheduledAt)
-      setScheduleFromUTC(schedulePostData.scheduledAt);
-  }, [
-    singleFacebookPostContent,
-    schedulePostData?.scheduledAt,
-    dispatch,
-    isEditMode,
-  ]);
-
-  // console.log(schedulePostData, "THE SCHEDULED POST DATA");
-
-  // console.log(scheduleDate, scheduleTime, "🎄");
-
-  // Handle close based on mode
-  const handleClose = () => {
-    if (isEditMode) {
-      dispatch(togglePageEdit(false));
-      console.log("EDIT PAGE RESET");
-      dispatch(resetDraft());
-    } else {
-      dispatch(togglePage(false));
-      console.log(" PAGE RESET");
-      dispatch(resetDraft());
-    }
-  };
-
+  }, [isEditMode, singleFacebookPostContent, dispatch]);
   return (
     <>
       {/* BACKDROP */}
@@ -372,17 +308,7 @@ export default function CreateEditPostComponent({ data, isEditMode = false }) {
                                 letterSpacing: "0.03em",
                                 boxShadow: `0 2px 8px ${platform.glow}`,
                               }}
-                              // onMouseEnter={(e) => {
-                              //   e.currentTarget.style.transform =
-                              //     "translateY(-2px) scale(1.04)";
-                              //   e.currentTarget.style.boxShadow = `0 6px 20px ${platform.glow}`;
-                              // }}
                               onClick={() => handleClick(page)}
-                              // onMouseLeave={(e) => {
-                              //   e.currentTarget.style.transform =
-                              //     "translateY(0) scale(1)";
-                              //   e.currentTarget.style.boxShadow = `0 2px 8px ${platform.glow}`;
-                              // }}
                             >
                               <span
                                 className="inline-flex items-center justify-center flex-shrink-0"
@@ -588,11 +514,11 @@ export default function CreateEditPostComponent({ data, isEditMode = false }) {
                   <Calendar className="w-4 h-4" />
 
                   {/* SCHEDULED TIME - Different display based on mode */}
-                  {schedulePostData?.scheduledAt ? (
+                  {scheduleDate && scheduleTime ? (
                     <span className="text-xs sm:text-sm">
                       {scheduleDate} • {scheduleTime}
                     </span>
-                  ) : completeDateAndTime && !isEditMode ? (
+                  ) : completeDateAndTime ? (
                     <span className="text-xs sm:text-sm">
                       {new Date(completeDateAndTime).toLocaleDateString(
                         "en-IN",
@@ -608,23 +534,16 @@ export default function CreateEditPostComponent({ data, isEditMode = false }) {
                   ) : (
                     <span className="text-xs sm:text-sm">Schedule a post</span>
                   )}
-
                   <ChevronDown className="w-4 h-4" />
                 </button>
 
                 <button
-                  // onClick={() => HandleSetSchedule()}
+                  onClick={
+                    isEditMode ? handleEditSchedule : handleCreateSchedule
+                  }
                   className="w-full sm:w-auto px-6 py-2.5 text-sm font-medium bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
                 >
-                  {isEditMode ? (
-                    <div onClick={() => handleScheduleEditPostAgainSchedule()}>
-                      Schedule Edit Post
-                    </div>
-                  ) : (
-                    <div onClick={() => HandleSetSchedule()}>
-                      Schedule Posts
-                    </div>
-                  )}
+                  {isEditMode ? "Schedule Edit Post" : "Schedule Posts"}
                 </button>
               </div>
             </div>

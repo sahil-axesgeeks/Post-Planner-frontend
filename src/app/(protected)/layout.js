@@ -8,36 +8,32 @@ import Navbar from "@/Actual-Components/navbar/navbar";
 import ReduxStoreProvider from "@/app/(protected)/Providers/reduxStore/reduxStoreProvider";
 
 export default async function RootLayout({ children }) {
-  // make a backend call overhere
   const cookieStore = await cookies(); // ✅ MUST await
-  const user = cookieStore.get("token"); // ✅ works now
-  console.log(user);
-
-  // 🔒 Not authenticated → redirect
-  if (!user) {
+  const token = cookieStore.get("token")?.value; // ✅ now safe
+  if (!token) {
+    console.log("SERVER IDONT HAVE A TOKEN");
     redirect("/User/Login");
   }
-
   return (
-    <html lang="en">
-      <body className="h-screen overflow-hidden">
-        <ReduxStoreProvider>
-          <SidebarProvider>
-            <div className="flex h-screen overflow-hidden">
-              <AppSidebar />
+    // <html lang="en">
+    //   <body className="h-screen overflow-hidden">
+    <ReduxStoreProvider>
+      <SidebarProvider>
+        <div className="flex h-screen overflow-hidden">
+          <AppSidebar />
 
-              <main className="flex flex-col h-screen w-screen overflow-hidden">
-                <div className="flex shrink-0">
-                  <SidebarTrigger />
-                  <Navbar />
-                </div>
-
-                <div className="flex-1 overflow-y-auto">{children}</div>
-              </main>
+          <main className="flex flex-col h-screen w-screen overflow-hidden">
+            <div className="flex shrink-0">
+              <SidebarTrigger />
+              <Navbar />
             </div>
-          </SidebarProvider>
-        </ReduxStoreProvider>
-      </body>
-    </html>
+
+            <div className="flex-1 overflow-y-auto">{children}</div>
+          </main>
+        </div>
+      </SidebarProvider>
+    </ReduxStoreProvider>
+    //   </body>
+    // </html>
   );
 }

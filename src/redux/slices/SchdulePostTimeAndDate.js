@@ -4,7 +4,7 @@ const SchedulePostTimeAndDate = createSlice({
   name: "SchedulePostTimeAndDate",
   initialState: {
     time: "12:00:00",
-    date: null,
+    date: new Date().toISOString().split("T")[0],
   },
   reducers: {
     ScheduleTime: (state, action) => {
@@ -19,8 +19,22 @@ const SchedulePostTimeAndDate = createSlice({
     setSchedule(state, action) {
       const dateObj = new Date(action.payload);
 
-      state.date = dateObj.toISOString().slice(0, 10); // 2026-02-02
-      state.time = dateObj.toISOString().slice(11, 16); // 11:37
+      const formatter = new Intl.DateTimeFormat("en-CA", {
+        timeZone: "Asia/Kolkata", // 🔥 changeable
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      });
+
+      const parts = formatter.formatToParts(dateObj);
+
+      const get = (type) => parts.find((p) => p.type === type)?.value;
+
+      state.date = `${get("year")}-${get("month")}-${get("day")}`;
+      state.time = `${get("hour")}:${get("minute")}`;
     },
   },
 });

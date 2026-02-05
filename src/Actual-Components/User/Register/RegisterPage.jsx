@@ -1,16 +1,16 @@
 "use client";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   Eye,
   EyeOff,
-  Mail,
-  Lock,
-  MessageSquare,
-  Video,
-  Music,
-  Image,
-  FileText,
-  Users,
+  // Mail,
+  // Lock,
+  // MessageSquare,
+  // Video,
+  // Music,
+  // Image,
+  // FileText,
+  // Users,
 } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { useRouter } from "next/navigation";
@@ -18,45 +18,57 @@ import { useRouter } from "next/navigation";
 // Import the thunk for dispatching the function
 import { registerUser } from "@/redux/thunks/auth/registerAuthThunk";
 
+// HELPERS
 import { floatingIcons } from "../helpers/floatingIcons";
+import useFormChange from "../helpers/handleChange";
 
 export default function RegisterComponent() {
   const dispatch = useDispatch();
   const router = useRouter();
 
-  const { user, success, loading, initialized, error } = useSelector(
+  const { user, loading, initialized, success } = useSelector(
     (state) => state.authSlice,
   );
 
   const [showPassword, setShowPassword] = useState(false);
 
-  // const { user, success } = useSelector((state) => {
-  //   return state.authSlice;
-  // });
+  // const locale = navigator.language;
+  // const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  // console.log(locale, timeZone);
 
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     password: "",
+    locale: "",
+    timezone: "",
+    timeFormat: "",
   });
 
-  const HandleChange = useCallback((e) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  }, []);
-
-  const handleSubmit = (e) => {
-    e.preventDefault();
-    if (!loading) {
-      dispatch(registerUser(formData));
-    }
-  };
-
+  const handleChange = useFormChange(setFormData);
+  const handleSubmit = useCallback(
+    (e) => {
+      e.preventDefault();
+      if (!loading) {
+        dispatch(registerUser(formData));
+      }
+    },
+    [dispatch, formData],
+  );
+  // console.log(formData);
   useEffect(() => {
-    if (initialized && user) {
+    if (user) {
       router.replace("/");
     }
-  }, [initialized, user, router]);
+  }, [user]);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center w-screen min-h-screen">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-blue-500 border-solid" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative w-screen min-h-screen overflow-hidden flex items-center justify-center bg-transparent">
@@ -93,7 +105,7 @@ export default function RegisterComponent() {
                 name="name"
                 value={formData.name}
                 placeholder="Enter Your Name"
-                onChange={HandleChange}
+                onChange={handleChange}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                 required
               />
@@ -109,7 +121,7 @@ export default function RegisterComponent() {
                 value={formData.email}
                 name="email"
                 placeholder="Enter Your Mail"
-                onChange={HandleChange}
+                onChange={handleChange}
                 className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none"
                 required
               />
@@ -135,7 +147,7 @@ export default function RegisterComponent() {
                   type={showPassword ? "text" : "password"}
                   value={formData.password}
                   name="password"
-                  onChange={HandleChange}
+                  onChange={handleChange}
                   className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-indigo-500 outline-none pr-12"
                   required
                 />

@@ -26,6 +26,12 @@ const authSlice = createSlice({
       state.user = null;
       state.initialized = true;
     },
+    setUser: (state, action) => {
+      state.user = action.payload;
+    },
+    setInitialized: (state, action) => {
+      state.initialized = action.payload;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -38,7 +44,7 @@ const authSlice = createSlice({
       .addCase(registerUser.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.user = action.payload;
+        state.user = action.payload.user; // ✅ FIX
         state.initialized = true;
       })
       .addCase(registerUser.rejected, (state, action) => {
@@ -55,7 +61,7 @@ const authSlice = createSlice({
       .addCase(loginAuthThunk.fulfilled, (state, action) => {
         state.loading = false;
         state.success = true;
-        state.user = action.payload;
+        state.user = action.payload.user; // ✅ FIX
         state.initialized = true;
       })
       .addCase(loginAuthThunk.rejected, (state, action) => {
@@ -73,14 +79,13 @@ const authSlice = createSlice({
         state.user = action.payload || null;
         state.initialized = true;
       })
-      .addCase(DecodeCookieThunk.rejected, (state, action) => {
+      .addCase(DecodeCookieThunk.rejected, (state) => {
         state.loading = false;
-        state.user = null;
-        state.error = action.payload || null;
         state.initialized = true;
       });
   },
 });
 
-export const { resetAuthState, logout } = authSlice.actions;
+export const { resetAuthState, logout, setUser, setInitialized } =
+  authSlice.actions;
 export default authSlice.reducer;

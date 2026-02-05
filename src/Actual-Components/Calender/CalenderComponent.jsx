@@ -25,6 +25,8 @@ export default function PostCalendar() {
   const isPageOpenEdit = useSelector(
     (state) => state.OpenNdClose.isPageOpenEdit,
   );
+  const { user } = useSelector((state) => state.authSlice);
+  console.log(user);
 
   // ALL SCHEDULED POSTS FETCHING ALL
   const listScheduledPosts = useSelector(

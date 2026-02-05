@@ -22,3 +22,14 @@ export const formatISTDateTime = (utcString) => {
   // console.log(date, time);
   return { date, time };
 };
+
+export function formatTimeWithAmPm(time24) {
+  if (!time24) return "";
+  console.log(time24, "🥽🥽🥽🥽");
+
+  const [h, m] = time24.split(":").map(Number);
+  const period = h >= 12 ? "PM" : "AM";
+  const hour12 = h % 12 || 12;
+
+  return `${hour12}:${m.toString().padStart(2, "0")} ${period}`;
+}
