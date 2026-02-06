@@ -12,6 +12,7 @@ export const useSchedulePost = () => {
 
   const createSchedule = useCallback(
     (payload) => {
+      console.log("🥼THE PAYLOAD OF THE CREATE-SCHEDULE-POST", payload);
       dispatch(scheduleFacebookPostThunk(payload));
       dispatch(addToScheduledPosts());
     },
@@ -20,6 +21,10 @@ export const useSchedulePost = () => {
 
   const editSchedule = useCallback(
     async (id, payload) => {
+      console.log(
+        payload,
+        "THE PAYLOAD WHICH IS I HAVE GOT IN THE EDIT-SCHEDULE",
+      );
       await updateScheduledPostApi(id, payload);
       dispatch(resetDraft());
     },

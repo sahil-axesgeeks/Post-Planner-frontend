@@ -13,6 +13,7 @@ const ScheduledPostSlice = createSlice({
   },
   reducers: {
     setPostType(state, action) {
+      console.log("Setting the  post type ");
       state.draft.postType = action.payload;
     },
     setPostContent(state, action) {

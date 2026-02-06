@@ -3,7 +3,9 @@ export const buildCreateSchedulePayload = ({
   postContent,
   pageId,
   scheduledAt,
+  postType,
 }) => ({
+  postType,
   caption: postContent,
   page_id: pageId,
   scheduledAt,

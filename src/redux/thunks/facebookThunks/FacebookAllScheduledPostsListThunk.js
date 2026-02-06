@@ -4,6 +4,7 @@ import { createAsyncThunk } from "@reduxjs/toolkit";
 export const FacebookAllScheduledPostsThunk = createAsyncThunk(
   "auth/allscheduledposts",
   async (startEndDate, { rejectWithValue }) => {
+    console.log(startEndDate);
     try {
       console.log("the thunk");
       //    MAKE THE FETCH-SCHEDULE-POST-API
