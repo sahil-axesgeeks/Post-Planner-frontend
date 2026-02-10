@@ -1,6 +1,5 @@
-// src/app/layout.js
-import ReduxStoreProvider from "./(protected)/Providers/reduxStore/reduxStoreProvider";
 import "./globals.css";
+import ReduxStoreProvider from "./(protected)/Providers/reduxStore/reduxStoreProvider";
 
 export default function RootLayout({ children }) {
   return (

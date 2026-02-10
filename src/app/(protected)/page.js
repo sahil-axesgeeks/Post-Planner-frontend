@@ -6,7 +6,7 @@ import { useSelector } from "react-redux";
 import Calendar from "@/app/(protected)/Calender/Calender";
 
 import { useRouter } from "next/navigation";
-// REDUCX
+// REDUX
 import { useDispatch } from "react-redux";
 import { setUser, setInitialized } from "@/redux/slices/authSlice";
 export default function Home() {

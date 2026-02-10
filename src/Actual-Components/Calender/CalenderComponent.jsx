@@ -280,13 +280,17 @@ import { togglePage, togglePageEdit } from "@/redux/slices/OpenNdCloseSlice";
 import { FacebookAllScheduledPostsThunk } from "@/redux/thunks/facebookThunks/FacebookAllScheduledPostsListThunk";
 import { fetchSingleFacebookPostThunk } from "@/redux/thunks/facebookThunks/SingleFacebookPostContentThunk";
 import CreateEditPostComponent from "./CreatePostModelComponent";
-
+import PostData from "../postDataBox/postDataBox";
+import PostExpandedView from "../postDataBox/ExpandHoveredBox";
 export default function PostTimeGridCalendar() {
   const dispatch = useDispatch();
 
   const [currentDate, setCurrentDate] = useState(new Date());
   const [scheduledPostData, setScheduledPostData] = useState(null);
+  const [hoveredPostId, setHoveredPostId] = useState(null);
+  const [expandedPost, setExpandedPost] = useState(null);
 
+  // SELECTORS
   const isOpen = useSelector((state) => state.OpenNdClose.isPageOpen);
   const isPageOpenEdit = useSelector(
     (state) => state.OpenNdClose.isPageOpenEdit,
@@ -295,6 +299,7 @@ export default function PostTimeGridCalendar() {
   const listScheduledPosts = useSelector(
     (state) => state.facebookAllScheduledPosts.allScheduledPosts,
   );
+  console.log(listScheduledPosts);
 
   const schedulePostList = listScheduledPosts?.scheduledPosts || [];
 
@@ -407,6 +412,10 @@ export default function PostTimeGridCalendar() {
     dispatch(FacebookAllScheduledPostsThunk(startEndDate));
   }, [startUTC, endUTC, dispatch]);
 
+  const isPastTimeOnly = (hour) => {
+    const now = new Date();
+    return hour < now.getHours();
+  };
   return (
     <div className="flex h-screen flex-col bg-slate-50">
       {/* HEADER */}
@@ -504,40 +513,65 @@ export default function PostTimeGridCalendar() {
                   >
                     <div className="flex min-h-[56px] flex-col gap-1.5">
                       {slotPosts.map((post) => (
-                        <button
+                        <div
                           key={post._id}
-                          type="button"
-                          title={post.status}
-                          onClick={() => handleEditPost(post)}
-                          className={`
+                          className="relative"
+                          onMouseEnter={() => setHoveredPostId(post._id)}
+                          onMouseLeave={() => setHoveredPostId(null)}
+                        >
+                          <button
+                            key={post._id}
+                            type="button"
+                            title={post.status}
+                            onClick={() => handleEditPost(post)}
+                            className={`
                             group flex items-center gap-2 rounded-xl border px-2.5 py-1.5 text-[11px]
                             font-medium text-slate-900
                             shadow-sm transition-all duration-150
                             hover:-translate-y-0.5 hover:shadow-md
                             ${getStatusClasses(post.status)}
                           `}
-                        >
-                          <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
-                            <FacebookIconNew />
-                          </span>
-                          <div className="flex min-w-0 flex-col">
-                            <span className="line-clamp-1 text-left">
-                              {post.caption || "Scheduled post"}
+                          >
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-white shadow-sm">
+                              <FacebookIconNew />
                             </span>
-                            <span className="text-[9px] font-medium text-slate-700">
-                              {new Date(post.scheduledAt).toLocaleTimeString(
-                                undefined,
-                                { hour: "numeric", minute: "2-digit" },
-                              )}
+                            <div className="flex min-w-0 flex-col">
+                              <span className="line-clamp-1 text-left">
+                                {post.caption || "Scheduled post"}
+                              </span>
+                              <span className="text-[9px] font-medium text-slate-700">
+                                {new Date(post.scheduledAt).toLocaleTimeString(
+                                  undefined,
+                                  { hour: "numeric", minute: "2-digit" },
+                                )}
+                              </span>
+                            </div>
+                            <span className="ml-auto rounded-full bg-white/80 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-800">
+                              {post.status}
                             </span>
-                          </div>
-                          <span className="ml-auto rounded-full bg-white/80 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-800">
-                            {post.status}
-                          </span>
-                        </button>
+                          </button>
+                          {/* isPageOpenEdit && scheduledPostData */}
+                          {hoveredPostId === post._id && (
+                            <div className="absolute -right-10 top-12 ml-2 z-50 rounde px-3 py-2 text-xs shadow-lg min-w-[260px] max-w-[320px]">
+                              <PostData
+                                post={post}
+                                onExpand={setExpandedPost}
+                                isPageOpenEdit={isPageOpenEdit}
+                                scheduledPostData={scheduledPostData}
+                                handleEditPost={handleEditPost}
+                              />
+                            </div>
+                          )}
+                          {expandedPost && (
+                            <PostExpandedView
+                              post={expandedPost}
+                              onClose={() => setExpandedPost(null)}
+                            />
+                          )}
+                        </div>
                       ))}
 
-                      {slotPosts.length === 0 && (
+                      {slotPosts.length === 0 && !isPastTimeOnly(hour) && (
                         <button
                           type="button"
                           onClick={() => {
