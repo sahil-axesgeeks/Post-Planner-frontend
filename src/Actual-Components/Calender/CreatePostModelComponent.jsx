@@ -21,11 +21,7 @@ import { formatTimeWithAmPm } from "../Calender/handlers/ChangeDateUtcToIst";
 // SLICES
 import { ToggleCalender } from "@/redux/slices/CalenderOpenNdCloseSlice";
 import { togglePage, togglePageEdit } from "@/redux/slices/OpenNdCloseSlice";
-import {
-  // ScheduleDate,
-  // scheduleTime,
-  setSchedule,
-} from "@/redux/slices/SchdulePostTimeAndDate";
+import { setSchedule } from "@/redux/slices/SchdulePostTimeAndDate";
 import {
   setPostType,
   setPostContent,
@@ -33,7 +29,6 @@ import {
 } from "@/redux/slices/SchdulePostsSlice";
 
 import { useSchedulePost } from "./hooks/useSchedulePost";
-// import { useEditPostPrefill } from "./hooks/useEditPostPrefill";
 import {
   buildCreateSchedulePayload,
   buildEditSchedulePayload,
@@ -42,7 +37,6 @@ import { convertUTCToReduxSchedule } from "./utils/dateUtils";
 import { FacebookAllScheduledPostsThunk } from "@/redux/thunks/facebookThunks/FacebookAllScheduledPostsListThunk";
 export default function CreateEditPostComponent({ data, isEditMode = false }) {
   const dispatch = useDispatch();
-  // useEditPostPrefill({ isEditMode, data, dispatch });
 
   // CUSTOM HOOKS
   const { createSchedule, editSchedule } = useSchedulePost();
@@ -75,13 +69,19 @@ export default function CreateEditPostComponent({ data, isEditMode = false }) {
     }),
     shallowEqual,
   );
-  console.log(schedulePostData, "🖼🖼🖼🖼🖼🖼");
 
-  console.log(singleFacebookPostContent);
+  console.log(scheduleDate, scheduleTime, "👕👕"); //2026-02-18 15:18:59 👕👕
+
+  // console.log(schedulePostData, "🖼🖼🖼🖼🖼🖼");
+  // console.log(isCalenderOpen);
+  // console.log(singleFacebookPostContent);
+
+  // THIS CONVERTS THE TIME AND DATE TO -----> UTC
   const completeDateAndTime = useMemo(
     () => combineDateAndTime(scheduleDate, scheduleTime),
     [scheduleDate, scheduleTime],
-  );
+  ); //2026-02-12T22:31:00.000Z
+  // console.log(completeDateAndTime, "🎯🎯");
 
   const mappedPages = useMemo(() => {
     if (isEditMode) return [];
@@ -190,7 +190,7 @@ export default function CreateEditPostComponent({ data, isEditMode = false }) {
     if (caption) dispatch(setPostContent(caption));
     if (scheduledAt) {
       dispatch(setSchedule(scheduledAt));
-      convertUTCToReduxSchedule(scheduledAt, dispatch);
+      // convertUTCToReduxSchedule(scheduledAt, dispatch);
     }
     if (postType) {
       dispatch(setPostType(postType));
@@ -219,7 +219,6 @@ export default function CreateEditPostComponent({ data, isEditMode = false }) {
     <>
       {/* BACKDROP */}
       <div className="fixed inset-0 bg-black/50 z-40 backdrop-blur-sm" />
-
       {/* MAIN MODAL - Made responsive */}
       <div className="fixed inset-0 z-50 flex items-center justify-center p-0 sm:p-4">
         <div className="bg-white w-full h-full sm:h-auto sm:max-h-[90vh] sm:rounded-2xl shadow-2xl flex flex-col sm:flex-row overflow-hidden max-w-6xl sm:w-[95vw]">
@@ -563,19 +562,6 @@ export default function CreateEditPostComponent({ data, isEditMode = false }) {
                     <span className="text-xs sm:text-sm">
                       {scheduleDate} • {scheduleTime}
                     </span>
-                  ) : completeDateAndTime ? (
-                    <span className="text-xs sm:text-sm">
-                      {new Date(completeDateAndTime).toLocaleDateString(
-                        "en-IN",
-                        {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                          hour: "2-digit",
-                          minute: "2-digit",
-                        },
-                      )}
-                    </span>
                   ) : (
                     <span className="text-xs sm:text-sm">Schedule a post</span>
                   )}
@@ -638,17 +624,18 @@ export default function CreateEditPostComponent({ data, isEditMode = false }) {
           </div>
         </div>
       </div>
-
-      {/* CALENDAR MODAL - Better mobile sizing */}
+      CALENDAR MODAL - Better mobile sizing
       {isCalenderOpen && (
         <>
+          {/* Overlay */}
           <div
-            className="fixed inset-0 z-60 bg-black/30 backdrop-blur-sm"
+            className="fixed inset-0 z-[90] bg-black/30 backdrop-blur-sm"
             onClick={() => dispatch(ToggleCalender(false))}
           />
-          <div className="fixed inset-0 z-70 flex items-center justify-center p-4 sm:p-6 overflow-auto">
+
+          {/* Calendar Modal */}
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6 overflow-auto">
             <div className="bg-white rounded-xl shadow-2xl p-4 sm:p-5 relative w-fit max-w-full max-h-full">
-              {/* Close Button */}
               <button
                 onClick={() => dispatch(ToggleCalender(false))}
                 className="absolute top-3 right-3 p-1.5 hover:bg-gray-100 rounded-md transition-colors z-10"
@@ -656,9 +643,11 @@ export default function CreateEditPostComponent({ data, isEditMode = false }) {
                 <X className="w-4 h-4 text-gray-500" />
               </button>
 
-              {/* Calendar Component */}
+              {/* Add padding and gap around calendar */}
               <div className="overflow-auto">
-                <DateAndMonthCalender />
+                <div className="p-3 sm:p-4">
+                  <DateAndMonthCalender />
+                </div>
               </div>
             </div>
           </div>

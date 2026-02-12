@@ -51,6 +51,8 @@ export function AppSidebar() {
 
       {/* Sidebar */}
       <Sidebar
+        open={isOpen} // <-- add this
+        onOpenChange={setIsOpen}
         collapsible="icon"
         className={`fixed top-0 left-0 h-full z-40 transition-transform duration-300
           ${isOpen ? "translate-x-0" : "-translate-x-full"} lg:translate-x-0 lg:static lg:h-auto`}

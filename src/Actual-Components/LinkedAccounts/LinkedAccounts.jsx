@@ -115,7 +115,6 @@ export default function LinkedAccounts() {
           justify-center sm:justify-start
         `}
         >
-          {/* Icon pill – always centered in narrow/icon mode */}
           <div
             className={`
             flex shrink-0 items-center justify-center

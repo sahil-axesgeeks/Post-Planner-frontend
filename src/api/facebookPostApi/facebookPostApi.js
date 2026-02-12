@@ -2,8 +2,12 @@ import { fetchPostFunction } from "@/api/fetchPostFunction";
 
 export const FacebookPostApi = async (userData) => {
   try {
+    const token = localStorage.getItem("token");
+    const BASE_URL_POST = process.env.NEXT_PUBLIC_API_URL_post;
+    // NEXT_PUBLIC_API_URL_post=http://localhost:5000
+    console.log(BASE_URL_POST);
     // to create a scheduled post
-    const url = "http://localhost:5000/auth/scheduleFaceBookPost";
+    const url = `${BASE_URL_POST}/auth/scheduleFaceBookPost`;
 
     // console.log(
     //   userData,

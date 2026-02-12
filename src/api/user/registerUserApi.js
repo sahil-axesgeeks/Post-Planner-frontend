@@ -1,5 +1,5 @@
 export const registerUserApi = async (userData) => {
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL_User;
   console.log(BASE_URL);
   console.log(BASE_URL);
   const response = await fetch(`${BASE_URL}/api/v1/createUser`, {

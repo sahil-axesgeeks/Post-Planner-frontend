@@ -20,7 +20,7 @@
 //   return response.json();
 // };
 export const loginAuthApi = async (userData) => {
-  const BASE_URL = process.env.NEXT_PUBLIC_API_URL;
+  const BASE_URL = process.env.NEXT_PUBLIC_API_URL_User;
   const response = await fetch(`${BASE_URL}/api/v1/UserLogin`, {
     method: "POST",
     credentials: "include", // use if backend sets HTTP-only cookie
@@ -40,6 +40,10 @@ export const loginAuthApi = async (userData) => {
   // ⚡ Save token in cookie if backend returns it
   if (data.token) {
     document.cookie = `token=${data.token}; path=/; max-age=3600`;
+  }
+
+  if (data.token) {
+    localStorage.setItem("token", data.token);
   }
 
   return data;
